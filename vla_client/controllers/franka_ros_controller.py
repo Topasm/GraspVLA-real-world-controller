@@ -49,7 +49,6 @@ class FrankaROSController:
         # set controller parameters
         self.dynamic_param_client = Client("/cartesian_impedance_controllerdynamic_reconfigure_compliance_param_node")
         if self.time_mode == 'logical':
-            self.dynamic_param_client.update_configuration({"filter_d_order": 1})
             self.dynamic_param_client.update_configuration({"filter_params": 0.005})
             self.dynamic_param_client.update_configuration({"translational_stiffness": 2000.0})
             self.dynamic_param_client.update_configuration({"translational_damping": 89.0})
@@ -61,7 +60,6 @@ class FrankaROSController:
                 self.dynamic_param_client.update_configuration({"translational_clip_" + direction: 0.01})
                 self.dynamic_param_client.update_configuration({"rotational_clip_" + direction: 0.05})
         elif self.time_mode == 'physical':
-            self.dynamic_param_client.update_configuration({"filter_d_order": 3})
             self.dynamic_param_client.update_configuration({"filter_params": 0.004})
             self.dynamic_param_client.update_configuration({"translational_stiffness": 2000.0})
             self.dynamic_param_client.update_configuration({"translational_damping": 89.0})

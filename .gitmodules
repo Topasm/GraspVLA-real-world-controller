@@ -2,3 +2,6 @@
 	path = deps/serl_franka_controllers
 	url = git@github.com:JS00000/serl_franka_controllers.git
     
+[submodule "GraspVLA-playground"]
+	path = GraspVLA-playground
+	url = https://github.com/MiYanDoris/GraspVLA-playground.git

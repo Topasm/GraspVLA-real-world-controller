@@ -22,7 +22,7 @@ RUN echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/robotpkg.asc] http://robot
 RUN apt-get update
 RUN apt-get install -y robotpkg-pinocchio
 
-RUN git clone --recursive https://github.com/frankaemika/libfranka -b 0.15.0 # only for FR3
+RUN git clone --recursive https://github.com/frankaemika/libfranka -b 0.19.0 # only for FR3
 WORKDIR /libfranka
 RUN mkdir build
 WORKDIR /libfranka/build
@@ -48,14 +48,23 @@ RUN echo "source /ros_entrypoint.sh" >> /root/.bashrc
 RUN echo "source /catkin_ws/devel/setup.bash" >> /root/.bashrc
 
 RUN git clone --recursive https://github.com/frankarobotics/franka_ros -b noetic-devel src/franka_ros
+
+# Patch franka_ros CMakeLists to use C++17 (required for libfranka 0.19.0)
+RUN find /catkin_ws/src/franka_ros -name "CMakeLists.txt" -exec sed -i 's/CMAKE_CXX_STANDARD 14/CMAKE_CXX_STANDARD 17/g' {} \;
+
 RUN rosdep install --from-paths src --ignore-src --rosdistro noetic -y --skip-keys libfranka 
 ENV CMAKE_PREFIX_PATH="/opt/openrobots/lib/cmake:${CMAKE_PREFIX_PATH}"
-RUN source /opt/ros/noetic/setup.sh && catkin_make -DCMAKE_BUILD_TYPE=Release -DFranka_DIR:PATH=/libfranka/build
-RUN source devel/setup.sh
+RUN source /opt/ros/noetic/setup.sh && cd /catkin_ws && \
+    catkin_make -DCMAKE_BUILD_TYPE=Release \
+            -DFranka_DIR=/libfranka/build \
+            2>&1 | tee /tmp/catkin_build.log
+
+RUN source /catkin_ws/devel/setup.sh
 
 COPY ./deps/serl_franka_controllers src/serl_franka_controllers
 RUN source /opt/ros/noetic/setup.sh \
-    && catkin_make -DCMAKE_BUILD_TYPE=Release
+    && catkin_make -DCMAKE_BUILD_TYPE=Release \
+            -DFranka_DIR=/libfranka/build
 
 RUN sed -i 's/realtime_config: enforce/realtime_config: ignore/g' /catkin_ws/src/franka_ros/franka_control/config/franka_control_node.yaml
 RUN sed -i 's/publish_rate: 30  # \[Hz\]/publish_rate: 100  # \[Hz\]/g' /catkin_ws/src/franka_ros/franka_control/config/default_controllers.yaml
